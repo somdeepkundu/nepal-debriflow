@@ -2,6 +2,8 @@
 
 Downstream exposure, imagery & rainfall anomaly analysis for the Rasuwa River Valley debris flow event (August 25, 2026).
 
+**[View Live App →](https://space-time-somdeep.projects.earthengine.app/view/nepal-debris-flow-downstream-exposure--rainfall-anomaly)**
+
 ![Nepal Debris Flow Visualization](nepal.gif)
 
 ## Overview
