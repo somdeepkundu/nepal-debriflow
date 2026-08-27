@@ -300,17 +300,27 @@ var disturbVec = disturbedMask.selfMask().reduceToVectors({
 });
 
 // --- Sentinel-1 SAR backscatter change (cloud-proof) ------------------------
-// OPTIMIZED: clip early to reduce processing footprint
+// OPTIMIZED: clip early + handle empty collections to avoid band mismatch
 var s1 = ee.ImageCollection('COPERNICUS/S1_GRD')
   .filterBounds(aoi)
   .filter(ee.Filter.eq('instrumentMode', 'IW'))
   .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
   .select('VV');
 
-var s1Pre  = s1.filterDate(EVENT.advance(-CFG.s1PreDays, 'day'), EVENT).median().clip(aoi);
-var s1Post = s1.filterDate(EVENT, EVENT.advance(CFG.s1PostDays, 'day')).median().clip(aoi);
-var s1Diff = s1Post.subtract(s1Pre).rename('vv_db');   // dB change
-var s1NewSmooth = s1Diff.lt(CFG.s1ChangeDb).selfMask();          // wet / smooth
+var s1PreColl = s1.filterDate(EVENT.advance(-CFG.s1PreDays, 'day'), EVENT);
+var s1PostColl = s1.filterDate(EVENT, EVENT.advance(CFG.s1PostDays, 'day'));
+
+// Guard against empty collections
+var s1Pre = ee.Image(ee.Algorithms.If(s1PreColl.size().gt(0),
+  s1PreColl.median().clip(aoi),
+  ee.Image(0).rename('VV')));
+
+var s1Post = ee.Image(ee.Algorithms.If(s1PostColl.size().gt(0),
+  s1PostColl.median().clip(aoi),
+  ee.Image(0).rename('VV')));
+
+var s1Diff = s1Post.subtract(s1Pre).rename('vv_db');
+var s1NewSmooth = s1Diff.lt(CFG.s1ChangeDb).selfMask();
 
 // ============================================================================
 // 4c. TERRAIN-AWARE INUNDATION  (MERIT Hydro HAND)
